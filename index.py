@@ -1,4 +1,5 @@
 import os
+import time
 import asyncio
 import discord
 from itertools import cycle
@@ -36,6 +37,7 @@ async def run():
     if not token: return print('Please provide a token to login with.')
 
     async with bot:
+        bot.start_time = time.time()
         await load()
         await bot.start(os.getenv('token'), reconnect=True)
     

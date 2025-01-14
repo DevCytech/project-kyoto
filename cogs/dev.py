@@ -1,7 +1,7 @@
 import os
+import time
 import psutil
 import discord
-from discord import app_commands
 from discord.ext import commands
 
 class DevCommands(commands.Cog):
@@ -31,6 +31,20 @@ class DevCommands(commands.Cog):
             error_embed = discord.Embed(description=f'❌ I ran into an issue syncing the commands. \n\n```{e}```', color=discord.Color.red())
             await ctx.send(embed=error_embed)
 
+    # Quick command list
+    @commands.command()
+    async def devcmds(self, ctx: discord.Message):
+        dev_id = os.getenv('dev_id')
+        if dev_id is None: return print('No developer id has been set in enviroment file.')
+        if not ctx.author.id == int(dev_id): return
+
+        cmds_embed = discord.Embed(title='Developer Commands', description='A list of all known developer commands built in', color=discord.Color.pink())
+        cmds_embed.add_field(name='Commands', value='**Information**: \n`diag`: Get current diagnostic stats from the bot \n\n**Management**: \n`sync`: Syncs all slash commands to discord \n`restart`: Restart the bot remotely \n`shutdown`: Shut the bot down remotely \n`togglecommand {command}`: Enables or Disables commands \n\n**Debugging**: \n`load {module}`: Load a module that was unloaded \n`reload {module}`: Reload a module \n`unload {module}`: Unload a module')
+        try:
+            await ctx.send(embed=cmds_embed)
+        except Exception as e:
+            print(e)
+
     # Quick diag command to learn information about how to bot is running
     @commands.command()
     async def diag(self, ctx: discord.Message):
@@ -42,8 +56,13 @@ class DevCommands(commands.Cog):
         load_info = psutil.getloadavg()
         cpu_info = psutil.cpu_percent(interval=1)
 
+        current_time = time.time()
+        uptime_seconds = int(current_time-self.bot.start_time)
+        uptime_string = time.strftime("%H hour(s) %M minute(s) %S seconds", time.gmtime(uptime_seconds))
+
         diag_embed = discord.Embed(title='Diagnostics Open', description='Latency in ms', color=discord.Color.green())
         diag_embed.add_field(name="Latency (ms)", value=f"{round(self.bot.latency * 1000)}ms", inline=False)
+        diag_embed.add_field(name="Uptime", value=f'{uptime_string}', inline=False)
         diag_embed.add_field(name='CPU Usage (%)', value=f"{cpu_info}%", inline=True)
         diag_embed.add_field(name='Average Loads (%)', value=f"1m {round(load_info[0], 2)}% | 5m {round(load_info[1], 2)}% | 15m {round(load_info[2], 2)}%")
         diag_embed.add_field(name="Memory (mb)", value=f"{mem_info / 1024 **2:n}mb", inline=True)
